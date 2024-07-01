@@ -1,20 +1,32 @@
-// backend/app.js
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const carRoutes = require('./routes/cars');
-const { mongoURI } = require('./config');
+var express = require('express');
+var path = require('path');
+var cookieParser = require('cookie-parser');
+var logger = require('morgan');
+const apiRouter = require('./routes'); //import routes as middleware
 
-const app = express();
-const PORT = process.env.PORT || 5000;
+var app = express();
 
-app.use(cors());
+// view engine setup
+app.set('views', path.join(__dirname, 'views'));
+app.set('view engine', 'jade');
+
+app.use(logger('dev'));
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+app.use(express.static(path.join(__dirname, 'public')));
 
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log('MongoDB connected'))
-    .catch(err => console.log(err));
+//CORS
+app.use(function(req, res, next) {
+  res.header("Access-Control-Allow-Origin", "*");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  next();
+});
 
-app.use('/api/cars', carRoutes);
+app.use('/api', apiRouter);
 
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.get('*', (_, res) => {
+	res.sendFile(path.join(__dirname, '../client/public/index.html'));
+});
+
+module.exports = app;
